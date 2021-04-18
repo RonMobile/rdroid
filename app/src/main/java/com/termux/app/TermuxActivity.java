@@ -5,6 +5,7 @@ import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.Service;
 import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
 import android.content.ClipData;
@@ -57,7 +58,9 @@ import com.termux.view.TerminalView;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -66,11 +69,15 @@ import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import java.io.BufferedReader;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.viewpager.widget.PagerAdapter;
 import androidx.viewpager.widget.ViewPager;
+
 
 /**
  * A terminal emulator activity.
@@ -112,6 +119,8 @@ public final class TermuxActivity extends Activity implements ServiceConnection 
     ExtraKeysView mExtraKeysView;
 
     TermuxPreferences mSettings;
+
+    private TerminalInstaller mTerminalInstaller = new TerminalInstaller();
 
     /**
      * The connection to the {@link TermuxService}. Requested in {@link #onCreate(Bundle)} with a call to
@@ -348,7 +357,8 @@ public final class TermuxActivity extends Activity implements ServiceConnection 
         mBellSoundId = mBellSoundPool.load(this, R.raw.bell, 1);
 
         sendOpenedBroadcast();
-    }
+
+     }
 
     public int getNavBarHeight() {
         return mNavBarHeight;
@@ -387,9 +397,13 @@ public final class TermuxActivity extends Activity implements ServiceConnection 
      * {@link #bindService(Intent, ServiceConnection, int)} in {@link #onCreate(Bundle)} which will cause a call to this
      * callback method.
      */
+    @RequiresApi(api = Build.VERSION_CODES.N)
     @Override
     public void onServiceConnected(ComponentName componentName, IBinder service) {
         mTermService = ((TermuxService.LocalBinder) service).service;
+
+        // TODO:
+        // mTerminalInstaller.installDefault(mTermService);
 
         mTermService.mSessionChangeCallback = new SessionChangedCallback() {
             @Override
@@ -535,7 +549,7 @@ public final class TermuxActivity extends Activity implements ServiceConnection 
 
         if (mTermService.getSessions().isEmpty()) {
             if (mIsVisible) {
-                TermuxInstaller.setupIfNeeded(TermuxActivity.this, () -> {
+                TermuxInstaller.setupIfNeeded(TermuxActivity.this, mTermService, () -> {
                     if (mTermService == null) return; // Activity might have been destroyed.
                     try {
                         Bundle bundle = getIntent().getExtras();

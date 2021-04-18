@@ -1,7 +1,6 @@
 plugins {
   id "com.android.application"
 }
-
 android {
     compileSdkVersion project.properties.compileSdkVersion.toInteger()
     ndkVersion project.properties.ndkVersion

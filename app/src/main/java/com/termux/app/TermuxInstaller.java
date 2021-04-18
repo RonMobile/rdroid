@@ -4,12 +4,15 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.os.Build;
 import android.os.Environment;
 import android.os.UserManager;
 import android.system.Os;
 import android.util.Log;
 import android.util.Pair;
 import android.view.WindowManager;
+
+import androidx.annotation.RequiresApi;
 
 import com.termux.R;
 import com.termux.terminal.EmulatorDebug;
@@ -47,7 +50,7 @@ import java.util.zip.ZipInputStream;
 final class TermuxInstaller {
 
     /** Performs setup if necessary. */
-    static void setupIfNeeded(final Activity activity, final Runnable whenDone) {
+    static void setupIfNeeded(final Activity activity, final TermuxService service, final Runnable whenDone) {
         // Termux can only be run as the primary user (device owner) since only that
         // account has the expected file system paths. Verify that:
         UserManager um = (UserManager) activity.getSystemService(Context.USER_SERVICE);
@@ -64,8 +67,10 @@ final class TermuxInstaller {
             return;
         }
 
+        // Here is the pop-up window with "Installing.."
         final ProgressDialog progress = ProgressDialog.show(activity, null, activity.getString(R.string.bootstrap_installer_body), true, false);
         new Thread() {
+            @RequiresApi(api = Build.VERSION_CODES.N)
             @Override
             public void run() {
                 try {
@@ -128,6 +133,11 @@ final class TermuxInstaller {
                         throw new RuntimeException("Unable to rename staging folder");
                     }
 
+                    // Trying to install wget etc.
+                    // It seems it works
+                    TerminalInstaller mTerminalInstaller = new TerminalInstaller();
+                    mTerminalInstaller.installDefault(service);
+
                     activity.runOnUiThread(whenDone);
                 } catch (final Exception e) {
                     Log.e(EmulatorDebug.LOG_TAG, "Bootstrap error", e);
@@ -139,7 +149,7 @@ final class TermuxInstaller {
                                     activity.finish();
                                 }).setPositiveButton(R.string.bootstrap_error_try_again, (dialog, which) -> {
                                     dialog.dismiss();
-                                    TermuxInstaller.setupIfNeeded(activity, whenDone);
+                                    TermuxInstaller.setupIfNeeded(activity, service, whenDone);
                                 }).show();
                         } catch (WindowManager.BadTokenException e1) {
                             // Activity already dismissed - ignore.

@@ -59,6 +59,7 @@ public final class TermuxService extends Service implements SessionChangedCallba
     private static final String ACTION_UNLOCK_WAKE = "com.termux.service_wake_unlock";
     /** Intent action to launch a new terminal session. Executed from TermuxWidgetProvider. */
     public static final String ACTION_EXECUTE = "com.termux.service_execute";
+    public static final String ACTION_EXECUTE_HIDDEN = "com.termux.service_execute_hidden";
 
     public static final String EXTRA_ARGUMENTS = "com.termux.execute.arguments";
 
@@ -169,6 +170,27 @@ public final class TermuxService extends Service implements SessionChangedCallba
                 // Launch the main Termux app, which will now show the current session:
                 startActivity(new Intent(this, TermuxActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
             }
+        } else if (ACTION_EXECUTE_HIDDEN.equals(action)) {
+            Uri executableUri = intent.getData();
+            String executablePath = (executableUri == null ? null : executableUri.getPath());
+
+            String[] arguments = (executableUri == null ? null : intent.getStringArrayExtra(EXTRA_ARGUMENTS));
+            String cwd = intent.getStringExtra(EXTRA_CURRENT_WORKING_DIRECTORY);
+
+            boolean failsafe = intent.getBooleanExtra(TermuxActivity.TERMUX_FAILSAFE_SESSION_ACTION, false);
+            TerminalSession newSession = createTermSession(executablePath, arguments, cwd, failsafe);
+
+            // Transform executable path to session name, e.g. "/bin/do-something.sh" => "do something.sh".
+            if (executablePath != null) {
+                int lastSlash = executablePath.lastIndexOf('/');
+                String name = (lastSlash == -1) ? executablePath : executablePath.substring(lastSlash + 1);
+                name = name.replace('-', ' ');
+                newSession.mSessionName = name;
+            }
+
+            // Make the newly created session the current one to be displayed:
+            // TermuxPreferences.storeCurrentSession(this, newSession);
+
         } else if (action != null) {
             Log.e(EmulatorDebug.LOG_TAG, "Unknown TermuxService action: '" + action + "'");
         }
