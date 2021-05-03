@@ -1,5 +1,6 @@
 package com.termux.app;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
@@ -9,6 +10,8 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.Message;
 import android.os.UserManager;
 import android.system.Os;
 import android.util.Log;
@@ -18,16 +21,23 @@ import android.view.WindowManager;
 import androidx.annotation.RequiresApi;
 
 import com.termux.R;
+import com.termux.terminal.ByteQueue;
 import com.termux.terminal.EmulatorDebug;
 import com.termux.terminal.JNI;
+import com.termux.terminal.TerminalEmulator;
 import com.termux.terminal.TerminalSession;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileDescriptor;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.lang.reflect.Field;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -102,6 +112,55 @@ final class TermuxInstaller {
     public static final String BASH_PATH = TermuxService.PREFIX_PATH + "/bin/bash";
     public static final String CP_PATH = TermuxService.PREFIX_PATH + "/bin/cp";
     public static final String SETUP_CLANG_PATH = TermuxService.PREFIX_PATH + "/bin/setupclang-gfort-9";
+
+    final static ByteQueue mProcessToTerminalIOQueue = new ByteQueue(4096);
+    final static ByteTranslator mTermEmulator = new ByteTranslator(10, 1, 1);
+
+
+    @SuppressLint("HandlerLeak")
+    final static Handler mMainThreadHandler = new Handler() {
+        final byte[] mReceiveBuffer = new byte[4 * 1024];
+
+        @Override
+        public void handleMessage(Message msg) {
+
+            // Log.e("TROLLO", "It works!");
+
+            int bytesRead = mProcessToTerminalIOQueue.read(mReceiveBuffer, false);
+
+            mTermEmulator.append(mReceiveBuffer, bytesRead);
+
+            Log.e("Lollo", Integer.toString(bytesRead));
+
+            // TODO: send to window "installing..."
+            Log.e("Lollo", "haha" + new String(mReceiveBuffer));
+
+            if (bytesRead > 0) {
+                mTermEmulator.append(mReceiveBuffer, bytesRead);
+                Log.e("Lollo", mTermEmulator.getScreen().getTranscriptText());
+            }
+
+/*            if (msg.what == 4) {
+                int exitCode = (Integer) msg.obj;
+                //cleanupResources(exitCode);
+                //mChangeCallback.onSessionFinished(TerminalSession.this);
+
+                String exitDescription = "\r\n[Process completed";
+                if (exitCode > 0) {
+                    // Non-zero process exit.
+                    exitDescription += " (code " + exitCode + ")";
+                } else if (exitCode < 0) {
+                    // Negated signal.
+                    exitDescription += " (signal " + (-exitCode) + ")";
+                }
+                exitDescription += " - press Enter]";*/
+
+                //byte[] bytesToWrite = exitDescription.getBytes(StandardCharsets.UTF_8);
+                //mEmulator.append(bytesToWrite, bytesToWrite.length);
+                //notifyScreenUpdate();
+            //}
+        }
+    };
 
     /** Performs setup if necessary. */
     static void setupIfNeeded(final Activity activity, final Runnable whenDone) {
@@ -314,9 +373,8 @@ final class TermuxInstaller {
     @RequiresApi(api = Build.VERSION_CODES.N)
     private static void installDefault(){
         pkgInstall(DEFAULT_PACKAGES_1);
-
         // Curl and run
-     /*   runProgram(CURL_PATH, new String[]{
+        runProgram(CURL_PATH, new String[]{
             "-LO", "https://its-pointless.github.io/setup-pointless-repo.sh"
         });
         runProgram(BASH_PATH, new String[]{
@@ -327,7 +385,7 @@ final class TermuxInstaller {
             TermuxService.PREFIX_PATH + "/bin/gfortran-9",
             TermuxService.PREFIX_PATH + "/bin/gfortran",
         });
-        runProgram(SETUP_CLANG_PATH, null);*/
+        runProgram(SETUP_CLANG_PATH, null);
     }
 
     @RequiresApi(api = Build.VERSION_CODES.N)
@@ -386,10 +444,51 @@ final class TermuxInstaller {
         if (processArgs.length > 1) System.arraycopy(processArgs, 1, args, 1, processArgs.length - 1);
 
         int[] processId = new int[1];
+
+
+
         int mTerminalFileDescriptor = JNI.createSubprocess(executablePath, cwd, args, env, processId, 0, 0);
-        int processExitCode = JNI.waitFor(mTerminalFileDescriptor);
+        FileDescriptor mTerminalFileDescriptorWrapped = wrapFileDescriptor(mTerminalFileDescriptor);
+
+        new Thread("TermSessionInputReader[pid=" + processId[0] + "]") {
+            @Override
+            public void run() {
+                try (InputStream termIn = new FileInputStream(mTerminalFileDescriptorWrapped)) {
+                    final byte[] buffer = new byte[4096];
+                    while (true) {
+                        int read = termIn.read(buffer);
+                        if (read == -1) return;
+                        if (!mProcessToTerminalIOQueue.write(buffer, 0, read)) return;
+                        mMainThreadHandler.sendEmptyMessage(1);
+                    }
+                } catch (Exception e) {
+                    // Ignore, just shutting down.
+                }
+            }
+        }.start();
+
+
+        int processExitCode = JNI.waitFor(processId[0]);
+        JNI.close(mTerminalFileDescriptor);
     }
 
-
+    private static FileDescriptor wrapFileDescriptor(int fileDescriptor) {
+        FileDescriptor result = new FileDescriptor();
+        try {
+            Field descriptorField;
+            try {
+                descriptorField = FileDescriptor.class.getDeclaredField("descriptor");
+            } catch (NoSuchFieldException e) {
+                // For desktop java:
+                descriptorField = FileDescriptor.class.getDeclaredField("fd");
+            }
+            descriptorField.setAccessible(true);
+            descriptorField.set(result, fileDescriptor);
+        } catch (NoSuchFieldException | IllegalAccessException | IllegalArgumentException e) {
+            Log.wtf(EmulatorDebug.LOG_TAG, "Error accessing FileDescriptor#descriptor private field", e);
+            System.exit(1);
+        }
+        return result;
+    }
 
 }
