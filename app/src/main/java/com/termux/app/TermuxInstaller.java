@@ -93,29 +93,36 @@ import static com.termux.app.TermuxService.PREFIX_PATH;
  */
 final class TermuxInstaller {
 
+    private static final String TERMUX_INSTALLER_TAG = "TERMUX-INSTALLER";
+    private static ProgressDialog progress;
+
     public static final String[] DEFAULT_PACKAGES_1 = new String[]{
         "curl",
         "wget",
         "gnupg"
     };
 
+    public static final String POINTLESS_REPO_CONFIG_SCRIPT =
+        "https://raw.githubusercontent.com/RonMobile/r-on-android/master/setup-pointless-repo.sh";
+
     // Packages needed to run R
     public static final String[] DEFAULT_PACKAGES_2 = new String[]{
-        "r-base", "make", "clang gcc-9",  "openssl",
+        "r-base", "make", "clang", "gcc-9",  "openssl",
         "libcurl", "libicu", "libxml2", "ndk-sysroot",
         "pkg-config", "cmake", "git", "libcairo",
         "libtiff", "pango", "zlib"
     };
 
     public static final String PKG_PATH = TermuxService.PREFIX_PATH + "/bin/pkg";
+    public static final String APT_GET_PATH = TermuxService.PREFIX_PATH + "/bin/apt-get";
     public static final String CURL_PATH = TermuxService.PREFIX_PATH + "/bin/curl";
     public static final String BASH_PATH = TermuxService.PREFIX_PATH + "/bin/bash";
     public static final String CP_PATH = TermuxService.PREFIX_PATH + "/bin/cp";
+    public static final String YES_PATH = TermuxService.PREFIX_PATH + "/bin/yes";
     public static final String SETUP_CLANG_PATH = TermuxService.PREFIX_PATH + "/bin/setupclang-gfort-9";
 
     final static ByteQueue mProcessToTerminalIOQueue = new ByteQueue(4096);
     final static ByteTranslator mTermEmulator = new ByteTranslator(10, 1, 1);
-
 
     @SuppressLint("HandlerLeak")
     final static Handler mMainThreadHandler = new Handler() {
@@ -124,41 +131,17 @@ final class TermuxInstaller {
         @Override
         public void handleMessage(Message msg) {
 
-            // Log.e("TROLLO", "It works!");
-
             int bytesRead = mProcessToTerminalIOQueue.read(mReceiveBuffer, false);
 
-            mTermEmulator.append(mReceiveBuffer, bytesRead);
-
-            Log.e("Lollo", Integer.toString(bytesRead));
-
-            // TODO: send to window "installing..."
-            Log.e("Lollo", "haha" + new String(mReceiveBuffer));
-
             if (bytesRead > 0) {
-                mTermEmulator.append(mReceiveBuffer, bytesRead);
-                Log.e("Lollo", mTermEmulator.getScreen().getTranscriptText());
+                Log.e(TERMUX_INSTALLER_TAG, new String(mReceiveBuffer));
+
+                if (progress != null) {
+                    progress.setMessage(new String(mReceiveBuffer));
+                }
+
             }
 
-/*            if (msg.what == 4) {
-                int exitCode = (Integer) msg.obj;
-                //cleanupResources(exitCode);
-                //mChangeCallback.onSessionFinished(TerminalSession.this);
-
-                String exitDescription = "\r\n[Process completed";
-                if (exitCode > 0) {
-                    // Non-zero process exit.
-                    exitDescription += " (code " + exitCode + ")";
-                } else if (exitCode < 0) {
-                    // Negated signal.
-                    exitDescription += " (signal " + (-exitCode) + ")";
-                }
-                exitDescription += " - press Enter]";*/
-
-                //byte[] bytesToWrite = exitDescription.getBytes(StandardCharsets.UTF_8);
-                //mEmulator.append(bytesToWrite, bytesToWrite.length);
-                //notifyScreenUpdate();
-            //}
         }
     };
 
@@ -181,7 +164,9 @@ final class TermuxInstaller {
         }
 
         // Here is the pop-up window with "Installing.."
-        final ProgressDialog progress = ProgressDialog.show(activity, null, activity.getString(R.string.bootstrap_installer_body), true, false);
+        // final ProgressDialog progress = ProgressDialog.show(activity, null, activity.getString(R.string.bootstrap_installer_body), true, false);
+        progress = ProgressDialog.show(activity, null, activity.getString(R.string.bootstrap_installer_body), true, false);
+
         new Thread() {
             @RequiresApi(api = Build.VERSION_CODES.N)
             @Override
@@ -370,16 +355,25 @@ final class TermuxInstaller {
         }.start();
     }
 
+    /* INSTALLERS */
+
     @RequiresApi(api = Build.VERSION_CODES.N)
     private static void installDefault(){
         pkgInstall(DEFAULT_PACKAGES_1);
         // Curl and run
+/*
         runProgram(CURL_PATH, new String[]{
             "-LO", "https://its-pointless.github.io/setup-pointless-repo.sh"
         });
+*/
+        runProgram(CURL_PATH, new String[]{
+            "-LO", POINTLESS_REPO_CONFIG_SCRIPT
+        });
+
         runProgram(BASH_PATH, new String[]{
             "setup-pointless-repo.sh"
         });
+
         pkgInstall(DEFAULT_PACKAGES_2);
         cp(new String[]{
             TermuxService.PREFIX_PATH + "/bin/gfortran-9",
@@ -395,8 +389,19 @@ final class TermuxInstaller {
         runProgram(PKG_PATH, cmd);
     }
 
+    private static void aptGet(String[] args){
+        runProgram(APT_GET_PATH, args);
+    }
+
     private static void cp(String[] fromAndTarget){
         runProgram(CP_PATH, fromAndTarget);
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.N)
+    private static void yesBash(String[] bashArgs) {
+        String[] cmd = Stream.concat(Arrays.stream(new String[]{"|", "bash"}),
+            Arrays.stream(bashArgs)).toArray(String[]::new);
+        runProgram(YES_PATH, cmd);
     }
 
     private static void runProgram(String programPath, String[] arguments){
@@ -444,8 +449,6 @@ final class TermuxInstaller {
         if (processArgs.length > 1) System.arraycopy(processArgs, 1, args, 1, processArgs.length - 1);
 
         int[] processId = new int[1];
-
-
 
         int mTerminalFileDescriptor = JNI.createSubprocess(executablePath, cwd, args, env, processId, 0, 0);
         FileDescriptor mTerminalFileDescriptorWrapped = wrapFileDescriptor(mTerminalFileDescriptor);
