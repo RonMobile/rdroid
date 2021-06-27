@@ -1,0 +1,6 @@
+<resources>
+    <declare-styleable name="MainButtonView">
+        <attr name="text" format="string" />
+        <attr name="src" format="integer" />
+    </declare-styleable>
+</resources>

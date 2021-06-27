@@ -159,7 +159,7 @@ final class TermuxInstaller {
 
         final File PREFIX_FILE = new File(PREFIX_PATH);
         if (PREFIX_FILE.isDirectory()) {
-            whenDone.run();
+            // whenDone.run();
             return;
         }
 
@@ -469,7 +469,6 @@ final class TermuxInstaller {
                 }
             }
         }.start();
-
 
         int processExitCode = JNI.waitFor(processId[0]);
         JNI.close(mTerminalFileDescriptor);

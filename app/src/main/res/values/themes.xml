@@ -1,0 +1,11 @@
+<resources>
+
+    <style name="Theme.Termux.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+    </style>
+
+    <style name="Theme.Termux.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
+
+    <style name="Theme.Termux.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
+</resources>

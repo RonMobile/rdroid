@@ -47,6 +47,7 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.Toolbar;
 
 import com.termux.R;
 import com.termux.terminal.EmulatorDebug;
@@ -115,6 +116,8 @@ public final class TermuxActivity extends Activity implements ServiceConnection 
     @SuppressWarnings("NullableProblems")
     @NonNull
     TerminalView mTerminalView;
+
+    Toolbar mToolbar;
 
     ExtraKeysView mExtraKeysView;
 
@@ -248,6 +251,10 @@ public final class TermuxActivity extends Activity implements ServiceConnection 
         mTerminalView.setTextSize(mSettings.getFontSize());
         mTerminalView.setKeepScreenOn(mSettings.isScreenAlwaysOn());
         mTerminalView.requestFocus();
+
+        mToolbar = findViewById(R.id.toolbar);
+        mToolbar.setVisibility(View.VISIBLE);
+        setActionBar(mToolbar);
 
         final ViewPager viewPager = findViewById(R.id.viewpager);
         if (mSettings.mShowExtraKeys) viewPager.setVisibility(View.VISIBLE);
