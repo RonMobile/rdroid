@@ -1,17 +1,21 @@
 package com.termux.app;
 
 import android.content.Context;
+import android.content.res.ColorStateList;
 import android.content.res.TypedArray;
 import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
+import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.LinearLayout;
 
 import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
 
 import com.termux.R;
 
@@ -60,6 +64,27 @@ public class MainButtonView extends LinearLayout {
         mTextView.setText(text);
 
         // Set listener
+        setOnTouchListener(new OnTouchListener() {
+            @Override
+            public boolean onTouch(View view, MotionEvent motionEvent) {
+                ImageView mImageViewLocal = (ImageView) ((LinearLayout) view).getChildAt(0);
+
+                if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
+                    mImageViewLocal.setImageTintList(
+                        ColorStateList.valueOf(
+                            ContextCompat.getColor(context, R.color.light_blue_400)
+                        ));
+                } else if (motionEvent.getAction() == MotionEvent.ACTION_UP){
+                    mImageViewLocal.setImageTintList(
+                        ColorStateList.valueOf(
+                            ContextCompat.getColor(context, R.color.gray_400)
+                        ));
+                }
+                return true;
+            }
+        });
+
+
     }
 
 
