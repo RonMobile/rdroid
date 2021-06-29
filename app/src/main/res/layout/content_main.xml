@@ -19,7 +19,7 @@
             android:layout_weight=".33">
 
             <com.termux.app.MainButtonView
-                android:id="@+id/r_console_btn"
+                android:id="@+id/btn_r_console"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 app:src="@drawable/ic_language_r"
@@ -28,6 +28,7 @@
                 android:visibility="visible" />
 
             <com.termux.app.MainButtonView
+                android:id="@+id/btn_code_editor"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 app:src="@drawable/ic_baseline_code_24"
@@ -44,14 +45,15 @@
             android:layout_weight=".33">
 
             <com.termux.app.MainButtonView
+                android:id="@+id/btn_run_script"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                app:src="@drawable/ic_language_r"
+                app:src="@drawable/ic_baseline_play_arrow_24"
                 android:layout_weight=".5"
-                app:text="Code editor"
-                android:visibility="visible" />
+                app:text="Run script"/>
 
             <com.termux.app.MainButtonView
+                android:id="@+id/btn_r_packages_installer"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 app:src="@drawable/ic_language_r"

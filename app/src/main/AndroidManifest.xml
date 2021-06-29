@@ -40,16 +40,30 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="false"
         android:theme="@style/Theme.Termux">
+
         <activity
             android:name=".app.MainActivity"
             android:label="@string/application_name"
             android:theme="@style/Theme.Termux.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
+
+        <activity-alias
+            android:name=".HomeActivity"
+            android:targetActivity=".app.MainActivity">
+
+            <!-- Launch activity automatically on boot on Android Things devices -->
+            <intent-filter>
+
+                <category android:name="android.intent.category.IOT_LAUNCHER" />
+
+            </intent-filter>
+        </activity-alias>
+
         <!--
          This (or rather, value 2.1 or higher) is needed to make the Samsung Galaxy S8
              mark the app with "This app is optimized to run in full screen."
@@ -71,9 +85,11 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>-->
             <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
+                <action android:name="android.intent.action.SEND" />
 
-                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+                <category android:name="android.intent.category.DEFAULT" />
+
+                <!--category android:name="android.intent.category.LEANBACK_LAUNCHER" /-->
             </intent-filter>
 
             <meta-data
@@ -81,18 +97,7 @@
                 android:resource="@xml/shortcuts" />
         </activity>
 
-        <activity-alias
-            android:name=".HomeActivity"
-            android:targetActivity=".app.TermuxActivity">
 
-            <!-- Launch activity automatically on boot on Android Things devices -->
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.IOT_LAUNCHER" />
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-        </activity-alias>
 
         <activity
             android:name=".app.TermuxHelpActivity"

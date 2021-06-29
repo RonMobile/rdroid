@@ -26,6 +26,7 @@ public class MainButtonView extends LinearLayout {
 
     private ImageView mImageView;
     private TextView mTextView;
+    private OnClickListener onClickListener;
 
     public MainButtonView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -52,6 +53,7 @@ public class MainButtonView extends LinearLayout {
         setLayoutParams(params);
         setOrientation(LinearLayout.VERTICAL);
         setGravity(Gravity.CENTER_VERTICAL);
+        setClickable(false);
 
         LayoutInflater inflater = (LayoutInflater) context
             .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
@@ -77,15 +79,33 @@ public class MainButtonView extends LinearLayout {
                 } else if (motionEvent.getAction() == MotionEvent.ACTION_UP){
                     mImageViewLocal.setImageTintList(
                         ColorStateList.valueOf(
-                            ContextCompat.getColor(context, R.color.gray_400)
+                            ContextCompat.getColor(context, R.color.dark_gray)
                         ));
                 }
                 return true;
             }
         });
 
-
     }
 
+    @Override
+    public boolean dispatchTouchEvent(MotionEvent event) {
+        if (event.getAction() == MotionEvent.ACTION_DOWN) {
+            setPressed(true);
+        }
+        else if(event.getAction() == MotionEvent.ACTION_UP) {
+            if(onClickListener != null) onClickListener.onClick(this);
+            setPressed(false);
+        }
+        else {
+            setPressed(false);
+        }
+        return super.dispatchTouchEvent(event);
+    }
+
+    @Override
+    public void setOnClickListener(OnClickListener l) {
+        onClickListener = l;
+    }
 
 }

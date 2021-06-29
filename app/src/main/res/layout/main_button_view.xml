@@ -3,11 +3,13 @@
 
         <ImageView
             android:layout_width="match_parent"
+            android:clickable="false"
             android:layout_height="0dip"
             android:layout_weight=".9"/>
 
         <TextView
             android:textAlignment="center"
+            android:clickable="false"
             android:gravity="center_horizontal"
             android:layout_width="match_parent"
             android:layout_height="0dip"

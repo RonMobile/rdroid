@@ -252,9 +252,11 @@ public final class TermuxActivity extends Activity implements ServiceConnection 
         mTerminalView.setKeepScreenOn(mSettings.isScreenAlwaysOn());
         mTerminalView.requestFocus();
 
+/*
         mToolbar = findViewById(R.id.toolbar);
         mToolbar.setVisibility(View.VISIBLE);
         setActionBar(mToolbar);
+*/
 
         final ViewPager viewPager = findViewById(R.id.viewpager);
         if (mSettings.mShowExtraKeys) viewPager.setVisibility(View.VISIBLE);
