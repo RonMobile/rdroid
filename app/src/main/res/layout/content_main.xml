@@ -19,6 +19,7 @@
             android:layout_weight=".33">
 
             <com.termux.app.MainButtonView
+                android:id="@+id/r_console_btn"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 app:src="@drawable/ic_language_r"

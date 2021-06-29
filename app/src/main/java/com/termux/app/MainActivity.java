@@ -1,6 +1,7 @@
 package com.termux.app;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -26,16 +27,22 @@ public class MainActivity extends Activity {
         Toolbar toolbar = findViewById(R.id.toolbar);
         setActionBar(toolbar);
 
-/*        FloatingActionButton fab = findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
+        TermuxInstaller.setupIfNeeded(MainActivity.this, null);
+
+        // Add onClickListeners
+        MainButtonView mRConsoleButton = findViewById(R.id.r_console_btn);
+
+        // TODO: not working
+        mRConsoleButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
+                Intent myIntent = new Intent(MainActivity.this, TermuxActivity.class);
+                MainActivity.this.startActivity(myIntent);
             }
-        });*/
+        });
 
-        TermuxInstaller.setupIfNeeded(MainActivity.this, null);
+
+
 
     }
 }
