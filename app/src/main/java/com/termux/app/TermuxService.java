@@ -98,7 +98,11 @@ public final class TermuxService extends Service implements SessionChangedCallba
     @SuppressLint("Wakelock")
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+
         String action = intent.getAction();
+
+        //action = ACTION_EXECUTE;
+
         if (ACTION_STOP_SERVICE.equals(action)) {
             mWantsToStop = true;
             for (int i = 0; i < mTerminalSessions.size(); i++)

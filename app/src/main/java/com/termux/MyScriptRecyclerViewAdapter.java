@@ -1,12 +1,9 @@
 package com.termux;
 
 import androidx.recyclerview.widget.RecyclerView;
-
-import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.termux.dummy.DummyContent.DummyItem;
@@ -17,32 +14,26 @@ import java.util.List;
  * {@link RecyclerView.Adapter} that can display a {@link DummyItem}.
  * TODO: Replace the implementation with code for your data type.
  */
-public class RPackageRecyclerViewAdapter extends RecyclerView.Adapter<RPackageRecyclerViewAdapter.ViewHolder> {
+public class MyScriptRecyclerViewAdapter extends RecyclerView.Adapter<MyScriptRecyclerViewAdapter.ViewHolder> {
 
-    private final List<Pair<String, String>>  mValues;
+    private final List<DummyItem> mValues;
 
-    public RPackageRecyclerViewAdapter(List<Pair<String, String>> items) {
+    public MyScriptRecyclerViewAdapter(List<DummyItem> items) {
         mValues = items;
     }
 
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext())
-            .inflate(R.layout.fragment_r_package_installer, parent, false);
-
-/*
-        View view = LayoutInflater.from(parent.getContext())
-            .inflate(viewType, parent, false);
-*/
-
+                .inflate(R.layout.fragment_run_script, parent, false);
         return new ViewHolder(view);
     }
 
     @Override
     public void onBindViewHolder(final ViewHolder holder, int position) {
-        holder.mItem = mValues.get(position).first;
-        holder.mIdView.setText(mValues.get(position).first);
-        holder.mContentView.setText(mValues.get(position).second);
+        holder.mItem = mValues.get(position);
+        holder.mIdView.setText(mValues.get(position).id);
+        holder.mContentView.setText(mValues.get(position).content);
     }
 
     @Override
@@ -54,7 +45,7 @@ public class RPackageRecyclerViewAdapter extends RecyclerView.Adapter<RPackageRe
         public final View mView;
         public final TextView mIdView;
         public final TextView mContentView;
-        public String mItem;
+        public DummyItem mItem;
 
         public ViewHolder(View view) {
             super(view);

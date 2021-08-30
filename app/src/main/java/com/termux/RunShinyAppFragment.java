@@ -3,12 +3,6 @@ package com.termux;
 import android.app.Fragment;
 import android.content.Context;
 import android.os.Bundle;
-
-
-import androidx.recyclerview.widget.GridLayoutManager;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-
 import android.util.Log;
 import android.util.Pair;
 import android.view.LayoutInflater;
@@ -16,11 +10,13 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.RelativeLayout;
 import android.widget.Toast;
 
+import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
 import com.termux.app.TermuxInstaller;
-import com.termux.dummy.DummyContent;
 
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -29,7 +25,9 @@ import java.util.List;
 /**
  * A fragment representing a list of Items.
  */
-public class RPackageInstallerFragment extends Fragment {
+public class RunShinyAppFragment extends Fragment {
+
+    // https://medium.com/hackernoon/android-recyclerview-onitemclicklistener-getadapterposition-a-better-way-3c789baab4db
 
     // TODO: Customize parameter argument names
     private static final String ARG_COLUMN_COUNT = "column-count";
@@ -43,12 +41,12 @@ public class RPackageInstallerFragment extends Fragment {
      * Mandatory empty constructor for the fragment manager to instantiate the
      * fragment (e.g. upon screen orientation changes).
      */
-    public RPackageInstallerFragment() {}
+    public RunShinyAppFragment() {}
 
     // TODO: Customize parameter initialization
     @SuppressWarnings("unused")
-    public static RPackageInstallerFragment newInstance(int columnCount) {
-        RPackageInstallerFragment fragment = new RPackageInstallerFragment();
+    public static RunShinyAppFragment newInstance(int columnCount) {
+        RunShinyAppFragment fragment = new RunShinyAppFragment();
         Bundle args = new Bundle();
         args.putInt(ARG_COLUMN_COUNT, columnCount);
         fragment.setArguments(args);
@@ -97,6 +95,8 @@ public class RPackageInstallerFragment extends Fragment {
             }
         });
 
+        TermuxInstaller.cleanOutput();
+
         TermuxInstaller.mCurrentOutputObservable.subscribe(s -> {
             List<Pair<String, String>> l = extractLibraries(s);
             // RecyclerView recyclerView = (RecyclerView) rview;
@@ -111,7 +111,7 @@ public class RPackageInstallerFragment extends Fragment {
             recyclerView.setLayoutManager(new GridLayoutManager(context, mColumnCount));
         }
 
-        TermuxInstaller.getInstalledPackages();
+        TermuxInstaller.getShinyDependentPackages();
     }
 
 

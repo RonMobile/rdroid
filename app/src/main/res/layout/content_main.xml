@@ -56,9 +56,9 @@
                 android:id="@+id/btn_r_packages_installer"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                app:src="@drawable/ic_language_r"
+                app:src="@drawable/package_variant_closed"
                 android:layout_weight=".5"
-                app:text="Code editor"
+                app:text="R Packages"
                 android:visibility="visible" />
 
         </LinearLayout>
@@ -70,19 +70,21 @@
             android:layout_weight=".33">
 
             <com.termux.app.MainButtonView
+                android:id="@+id/btn_run_shiny_app"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                app:src="@drawable/ic_language_r"
+                app:src="@drawable/cellphone_play"
                 android:layout_weight=".5"
-                app:text="Code editor"
+                app:text="Run Shiny App"
                 android:visibility="visible" />
 
             <com.termux.app.MainButtonView
+                android:id="@+id/btn_acknowlegdements"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                app:src="@drawable/ic_language_r"
+                app:src="@drawable/outline_attribution_24"
                 android:layout_weight=".5"
-                app:text="Code editor"
+                app:text="Acknowledgement"
                 android:visibility="visible" />
 
         </LinearLayout>

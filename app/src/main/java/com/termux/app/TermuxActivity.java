@@ -226,7 +226,6 @@ public final class TermuxActivity extends Activity implements ServiceConnection 
 
         super.onCreate(bundle);
 
-
         setContentView(R.layout.drawer_layout);
 
         View content = findViewById(android.R.id.content);
@@ -260,7 +259,6 @@ public final class TermuxActivity extends Activity implements ServiceConnection 
 
         final ViewPager viewPager = findViewById(R.id.viewpager);
         if (mSettings.mShowExtraKeys) viewPager.setVisibility(View.VISIBLE);
-
 
         ViewGroup.LayoutParams layoutParams = viewPager.getLayoutParams();
         layoutParams.height = layoutParams.height * (mSettings.mExtraKeys == null ? 0 : mSettings.mExtraKeys.getMatrix().length);

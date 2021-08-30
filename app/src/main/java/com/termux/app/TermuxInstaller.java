@@ -14,6 +14,7 @@ import android.os.Handler;
 import android.os.Message;
 import android.os.UserManager;
 import android.system.Os;
+import android.text.TextUtils;
 import android.util.Log;
 import android.util.Pair;
 import android.view.WindowManager;
@@ -40,11 +41,17 @@ import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+
+import io.reactivex.Observable;
+import io.reactivex.Observer;
+import io.reactivex.subjects.PublishSubject;
+import io.reactivex.subjects.Subject;
 
 import static com.termux.app.TermuxService.HOME_PATH;
 import static com.termux.app.TermuxService.PREFIX_PATH;
@@ -90,11 +97,18 @@ import static com.termux.app.TermuxService.PREFIX_PATH;
  * # Update apt
  * apt update
  *
+ * Icons:
+ *
+ * https://icon-icons.com/pack/Material-Design/2248&page=10
+ * https://materialdesignicons.com/icon/package-variant-closed
+ *
  */
-final class TermuxInstaller {
+public final class TermuxInstaller {
 
     private static final String TERMUX_INSTALLER_TAG = "TERMUX-INSTALLER";
     private static ProgressDialog progress;
+
+    public static Subject<String> mCurrentOutputObservable = PublishSubject.create();
 
     public static final String[] DEFAULT_PACKAGES_1 = new String[]{
         "curl",
@@ -120,9 +134,11 @@ final class TermuxInstaller {
     public static final String CP_PATH = TermuxService.PREFIX_PATH + "/bin/cp";
     public static final String YES_PATH = TermuxService.PREFIX_PATH + "/bin/yes";
     public static final String SETUP_CLANG_PATH = TermuxService.PREFIX_PATH + "/bin/setupclang-gfort-9";
+    public static final String R_SCRIPT_PATH = TermuxService.PREFIX_PATH + "/bin/Rscript";
 
     final static ByteQueue mProcessToTerminalIOQueue = new ByteQueue(4096);
     final static ByteTranslator mTermEmulator = new ByteTranslator(10, 1, 1);
+
 
     @SuppressLint("HandlerLeak")
     final static Handler mMainThreadHandler = new Handler() {
@@ -134,7 +150,9 @@ final class TermuxInstaller {
             int bytesRead = mProcessToTerminalIOQueue.read(mReceiveBuffer, false);
 
             if (bytesRead > 0) {
+
                 Log.e(TERMUX_INSTALLER_TAG, new String(mReceiveBuffer));
+                mCurrentOutputObservable.onNext(new String(mReceiveBuffer));
 
                 if (progress != null) {
                     progress.setMessage(new String(mReceiveBuffer));
@@ -159,7 +177,8 @@ final class TermuxInstaller {
 
         final File PREFIX_FILE = new File(PREFIX_PATH);
         if (PREFIX_FILE.isDirectory()) {
-            // whenDone.run();
+            if (!(whenDone == null))
+                whenDone.run();
             return;
         }
 
@@ -393,6 +412,10 @@ final class TermuxInstaller {
         runProgram(APT_GET_PATH, args);
     }
 
+    private static void rscript(String[] args) {
+        runProgram(R_SCRIPT_PATH, args);
+    }
+
     private static void cp(String[] fromAndTarget){
         runProgram(CP_PATH, fromAndTarget);
     }
@@ -493,4 +516,42 @@ final class TermuxInstaller {
         return result;
     }
 
+    public static void getInstalledPackages(){
+        rscript(new String[]{
+            "-e", "write.table(installed.packages()[, c(1,3)], row.names = FALSE, col.names = FALSE)"
+        });
+
+        // TODO: base is not visible
+    }
+
+
+    public static void getPackagesWithDependencies(){
+        rscript(new String[]{
+            "-e", 
+        });
+    }
+
+    public static void installRPackage(String packageName){
+        rscript(new String[]{
+            "-e", "install.packages('"+ packageName + "', repos = 'http://cran.us.r-project.org')"
+        });
+    }
+
+    public static void getShinyDependentPackages(){
+        rscript(new String[]{
+            "-e", "x <- as.data.frame(installed.packages()); " +
+            "x <- x[(grepl('shiny', x$Package) | grepl('shiny', x$Imports)), ]; " +
+            "write.table(x[, c(1,3)], row.names = FALSE, col.names = FALSE)"
+        });
+    }
+
+    public static void runShinyApp(String packageName, String function){
+        rscript(new String[]{
+
+        });
+    }
+
+    public static void cleanOutput(){
+        mCurrentOutputObservable.onNext("");
+    }
 }

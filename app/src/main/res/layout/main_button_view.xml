@@ -5,7 +5,8 @@
             android:layout_width="match_parent"
             android:clickable="false"
             android:layout_height="0dip"
-            android:layout_weight=".9"/>
+            android:layout_weight=".9"
+            android:layout_margin="10dp"/>
 
         <TextView
             android:textAlignment="center"

@@ -1,14 +1,91 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".MainScreenFragment">
 
-    <!-- TODO: Update blank fragment layout -->
-    <TextView
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" >
+
+    <LinearLayout
+        android:orientation="horizontal"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:text="@string/hello_blank_fragment" />
+        android:layout_weight=".33">
+
+        <com.termux.app.MainButtonView
+            android:id="@+id/btn_r_console"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:src="@drawable/ic_language_r"
+            android:layout_weight=".5"
+            app:text="R Console"
+            android:visibility="visible" />
+
+        <com.termux.app.MainButtonView
+            android:id="@+id/btn_code_editor"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:src="@drawable/ic_baseline_code_24"
+            android:layout_weight=".5"
+            app:text="Code editor"
+            android:visibility="visible" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_weight=".33">
+
+        <com.termux.app.MainButtonView
+            android:id="@+id/btn_run_script"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:src="@drawable/ic_baseline_play_arrow_24"
+            android:layout_weight=".5"
+            app:text="Run script"/>
+
+        <com.termux.app.MainButtonView
+            android:id="@+id/btn_r_packages_installer"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:src="@drawable/ic_language_r"
+            android:layout_weight=".5"
+            app:text="Install R Packages"
+            android:visibility="visible" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_weight=".33">
+
+        <com.termux.app.MainButtonView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:src="@drawable/ic_baseline_play_arrow_24"
+            android:layout_weight=".5"
+            app:text="Acknoledgements"
+            android:visibility="visible" />
+
+        <com.termux.app.MainButtonView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:src="@drawable/ic_baseline_play_arrow_24"
+            android:layout_weight=".5"
+            app:text="Code editor"
+            android:visibility="visible" />
+
+        </LinearLayout>
+    </LinearLayout>
 
 </FrameLayout>
