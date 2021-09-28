@@ -4,13 +4,18 @@ import android.app.Activity;
 import android.app.Fragment;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteOpenHelper;
 import android.os.Bundle;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 import com.termux.CodeFragment;
+import com.termux.PackagesContract;
+import com.termux.PackagesDbHelper;
 import com.termux.R;
 import com.termux.RPackageInstallerFragment;
 import com.termux.RunScriptFragment;
@@ -37,6 +42,7 @@ public class MainActivity extends Activity {
 
     private ConstraintLayout mMainMenu;
     private FrameLayout mFrameLayout;
+    public PackagesDbHelper packagesDbHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,6 +57,19 @@ public class MainActivity extends Activity {
         // Add onClickListeners
         mMainMenu =  findViewById(R.id.main_menu);
         mFrameLayout = findViewById(R.id.frame_layout);
+        packagesDbHelper = new PackagesDbHelper(this);
+
+        // Start db
+        // Uwaga na "ciapki"
+        SQLiteDatabase db = packagesDbHelper.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(PackagesContract.PackageEntry.COLUMN_NAME_NAME, "shiny");
+        values.put(PackagesContract.PackageEntry.COLUMN_NAME_VERSION, "1.6.0");
+        values.put(PackagesContract.PackageEntry.COLUMN_NAME_ACTION, "runExample('01_hello')");
+        db.insert(PackagesContract.PackageEntry.TABLE_NAME, null, values);
+
+        // Insert the new row, returning the primary key value of the new row
+        long newRowId = db.insert(PackagesContract.PackageEntry.TABLE_NAME, null, values);
 
         MainButtonView mRConsoleButton = findViewById(R.id.btn_r_console);
         MainButtonView mRPackagesInstaller = findViewById(R.id.btn_r_packages_installer);

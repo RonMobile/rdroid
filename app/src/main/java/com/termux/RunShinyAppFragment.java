@@ -81,6 +81,16 @@ public class RunShinyAppFragment extends Fragment {
         RecyclerView recyclerView = view.findViewById(R.id.list);
         EditText mEditText = view.findViewById(R.id.search_box);
 
+//        recyclerView.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//                Log.e("IT", "WORKS!");
+//                int itemPosition = recyclerView.getChildLayoutPosition(view);
+//                TermuxInstaller.performAction("shiny", "runExample('01_hello')");
+//            }
+//        });
+
+
         // Button
         Button mBtnAddLib = view.findViewById(R.id.add_lib_button);
 

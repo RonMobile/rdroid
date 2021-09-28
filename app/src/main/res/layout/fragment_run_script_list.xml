@@ -12,4 +12,5 @@
         app:layoutManager="LinearLayoutManager"
         android:background="#FFFFFF"
         tools:context=".RunScriptFragment"
-        tools:listitem="@layout/fragment_run_script"/>
+        tools:listitem="@layout/fragment_run_script"
+    android:clickable="true"/>

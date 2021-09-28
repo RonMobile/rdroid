@@ -387,47 +387,51 @@ public final class TermuxInstaller {
 */
         runProgram(CURL_PATH, new String[]{
             "-LO", POINTLESS_REPO_CONFIG_SCRIPT
-        });
+        }, true);
 
         runProgram(BASH_PATH, new String[]{
             "setup-pointless-repo.sh"
-        });
+        }, true);
 
         pkgInstall(DEFAULT_PACKAGES_2);
         cp(new String[]{
             TermuxService.PREFIX_PATH + "/bin/gfortran-9",
             TermuxService.PREFIX_PATH + "/bin/gfortran",
         });
-        runProgram(SETUP_CLANG_PATH, null);
+        runProgram(SETUP_CLANG_PATH, null, true);
     }
 
     @RequiresApi(api = Build.VERSION_CODES.N)
     private static void pkgInstall(String[] packages){
         String[] cmd = Stream.concat(Arrays.stream(new String[]{"install", "-y"}),
             Arrays.stream(packages)).toArray(String[]::new);
-        runProgram(PKG_PATH, cmd);
+        runProgram(PKG_PATH, cmd, true);
     }
 
     private static void aptGet(String[] args){
-        runProgram(APT_GET_PATH, args);
+        runProgram(APT_GET_PATH, args, true);
     }
 
     private static void rscript(String[] args) {
-        runProgram(R_SCRIPT_PATH, args);
+        runProgram(R_SCRIPT_PATH, args, true);
+    }
+
+    private static void rscript2(String[] args) {
+        runProgram(R_SCRIPT_PATH, args, false);
     }
 
     private static void cp(String[] fromAndTarget){
-        runProgram(CP_PATH, fromAndTarget);
+        runProgram(CP_PATH, fromAndTarget, true);
     }
 
     @RequiresApi(api = Build.VERSION_CODES.N)
     private static void yesBash(String[] bashArgs) {
         String[] cmd = Stream.concat(Arrays.stream(new String[]{"|", "bash"}),
             Arrays.stream(bashArgs)).toArray(String[]::new);
-        runProgram(YES_PATH, cmd);
+        runProgram(YES_PATH, cmd, true);
     }
 
-    private static void runProgram(String programPath, String[] arguments){
+    private static void runProgram(String programPath, String[] arguments, boolean wait){
         // String[] cmd = Stream.concat(Arrays.stream(command),
         //    Arrays.stream(packages)).toArray(String[]::new);
 
@@ -493,7 +497,20 @@ public final class TermuxInstaller {
             }
         }.start();
 
-        int processExitCode = JNI.waitFor(processId[0]);
+        if (wait) {
+            JNI.waitFor(processId[0]);
+        } else {
+            new Thread("TermSessionWaiter[pid=" + processId[0] + "]") {
+                @Override
+                public void run() {
+                    int processExitCode = JNI.waitFor(processId[0]);
+                    //mMainThreadHandler.sendMessage(mMainThreadHandler.obtainMessage(MSG_PROCESS_EXITED, processExitCode));
+                }
+            }.start();
+        }
+
+
+
         JNI.close(mTerminalFileDescriptor);
     }
 
@@ -554,4 +571,27 @@ public final class TermuxInstaller {
     public static void cleanOutput(){
         mCurrentOutputObservable.onNext("");
     }
+
+
+    public static void performAction(String pkg, String action){
+/*        rscript(new String[]{
+            "-e", pkg + "::" + action
+        });*/
+/*
+        rscript2(new String[]{
+            "-e", "shiny::runExample('01_hello')"
+        });
+*/
+        new Thread("TermSessionWaiter[pid=]") {
+            @Override
+            public void run() {
+                rscript(new String[]{
+                    "-e", "shiny::runExample('01_hello', launch.browser = TRUE)"
+                });
+            }
+        }.start();
+
+
+    }
+
 }

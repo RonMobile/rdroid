@@ -71,7 +71,6 @@ public class RPackageInstallerFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_r_package_installer_list,
             container, false);
 
-
         return view;
     }
 
