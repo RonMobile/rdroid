@@ -16,6 +16,7 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.termux.app.TermuxAction;
 import com.termux.app.TermuxInstaller;
 
 import java.util.Arrays;
@@ -90,27 +91,18 @@ public class RunShinyAppFragment extends Fragment {
 //            }
 //        });
 
-
-        // Button
-        Button mBtnAddLib = view.findViewById(R.id.add_lib_button);
-
-        mBtnAddLib.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                String libName = mEditText.getText().toString();
-                Log.e("TRollo", libName);
-                //TermuxInstaller.installRPackage(libName);
-                //TermuxInstaller.getInstalledPackages();
-                Toast.makeText(view.getContext(), libName, Toast.LENGTH_LONG);
-            }
-        });
+        if (mInstalledPackages != null) {
+            mInstalledPackages.clear();
+            recyclerView.notify();
+        }
 
         TermuxInstaller.cleanOutput();
 
         TermuxInstaller.mCurrentOutputObservable.subscribe(s -> {
-            List<Pair<String, String>> l = extractLibraries(s);
-            // RecyclerView recyclerView = (RecyclerView) rview;
-            recyclerView.setAdapter(new RPackageRecyclerViewAdapter(l));
+            if (TermuxInstaller.mLastAction == TermuxAction.GET_SHINY_APPS) {
+                mInstalledPackages = extractLibraries(s);
+                recyclerView.setAdapter(new RPackageRecyclerViewAdapter(mInstalledPackages));
+            }
         });
 
         // Set the adapter

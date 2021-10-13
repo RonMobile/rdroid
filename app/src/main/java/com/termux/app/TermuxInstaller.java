@@ -109,6 +109,7 @@ public final class TermuxInstaller {
     private static ProgressDialog progress;
 
     public static Subject<String> mCurrentOutputObservable = PublishSubject.create();
+    public static TermuxAction mLastAction;
 
     public static final String[] DEFAULT_PACKAGES_1 = new String[]{
         "curl",
@@ -136,7 +137,7 @@ public final class TermuxInstaller {
     public static final String SETUP_CLANG_PATH = TermuxService.PREFIX_PATH + "/bin/setupclang-gfort-9";
     public static final String R_SCRIPT_PATH = TermuxService.PREFIX_PATH + "/bin/Rscript";
 
-    final static ByteQueue mProcessToTerminalIOQueue = new ByteQueue(4096);
+    static ByteQueue mProcessToTerminalIOQueue = new ByteQueue(4096);
     final static ByteTranslator mTermEmulator = new ByteTranslator(10, 1, 1);
 
 
@@ -152,6 +153,7 @@ public final class TermuxInstaller {
             if (bytesRead > 0) {
 
                 Log.e(TERMUX_INSTALLER_TAG, new String(mReceiveBuffer));
+                mCurrentOutputObservable.onNext("");
                 mCurrentOutputObservable.onNext(new String(mReceiveBuffer));
 
                 if (progress != null) {
@@ -534,6 +536,7 @@ public final class TermuxInstaller {
     }
 
     public static void getInstalledPackages(){
+        mLastAction = TermuxAction.GET_PACKAGE_LIST;
         rscript(new String[]{
             "-e", "write.table(installed.packages()[, c(1,3)], row.names = FALSE, col.names = FALSE)"
         });
@@ -549,12 +552,14 @@ public final class TermuxInstaller {
     }
 
     public static void installRPackage(String packageName){
+        mLastAction =  TermuxAction.INSTALL_PACKAGE;
         rscript(new String[]{
             "-e", "install.packages('"+ packageName + "', repos = 'http://cran.us.r-project.org')"
         });
     }
 
     public static void getShinyDependentPackages(){
+        mLastAction = TermuxAction.GET_SHINY_APPS;
         rscript(new String[]{
             "-e", "x <- as.data.frame(installed.packages()); " +
             "x <- x[(grepl('shiny', x$Package) | grepl('shiny', x$Imports)), ]; " +
@@ -569,25 +574,23 @@ public final class TermuxInstaller {
     }
 
     public static void cleanOutput(){
-        mCurrentOutputObservable.onNext("");
+        mProcessToTerminalIOQueue = new ByteQueue(4096);
+        // mCurrentOutputObservable.onNext("");
     }
 
 
     public static void performAction(String pkg, String action){
-/*        rscript(new String[]{
-            "-e", pkg + "::" + action
-        });*/
-/*
-        rscript2(new String[]{
-            "-e", "shiny::runExample('01_hello')"
-        });
-*/
+
         new Thread("TermSessionWaiter[pid=]") {
             @Override
             public void run() {
                 rscript(new String[]{
-                    "-e", "shiny::runExample('01_hello', launch.browser = TRUE)"
+                    "-e", pkg + "::" + action
                 });
+
+//                rscript(new String[]{
+//                    "-e", "shiny::runExample('01_hello', launch.browser = TRUE)"
+//                });
             }
         }.start();
 

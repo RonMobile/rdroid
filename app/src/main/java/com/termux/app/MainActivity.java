@@ -13,6 +13,7 @@ import android.os.Bundle;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
+import com.termux.BuildConfig;
 import com.termux.CodeFragment;
 import com.termux.PackagesContract;
 import com.termux.PackagesDbHelper;
@@ -33,6 +34,8 @@ import android.view.WindowManager;
 import android.widget.FrameLayout;
 import android.widget.Toast;
 import android.widget.Toolbar;
+
+import java.lang.reflect.Method;
 
 import io.github.rosemoe.editor.widget.CodeEditor;
 
@@ -59,13 +62,25 @@ public class MainActivity extends Activity {
         mFrameLayout = findViewById(R.id.frame_layout);
         packagesDbHelper = new PackagesDbHelper(this);
 
+        if (BuildConfig.DEBUG) {
+            try {
+                Class<?> debugDB = Class.forName("com.amitshekhar.DebugDB");
+                Method getAddressLog = debugDB.getMethod("getAddressLog");
+                Object value = getAddressLog.invoke(null);
+                Log.e("DEBUG-ADDR", (String) value);
+                // Toast.makeText(this, (String) value, Toast.LENGTH_LONG).show();
+            } catch (Exception ignore) {
+
+            }
+        }
+
         // Start db
         // Uwaga na "ciapki"
         SQLiteDatabase db = packagesDbHelper.getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put(PackagesContract.PackageEntry.COLUMN_NAME_NAME, "shiny");
         values.put(PackagesContract.PackageEntry.COLUMN_NAME_VERSION, "1.6.0");
-        values.put(PackagesContract.PackageEntry.COLUMN_NAME_ACTION, "runExample('01_hello')");
+        values.put(PackagesContract.PackageEntry.COLUMN_NAME_ACTION, "runExample('01_hello', launch.browser = TRUE)");
         db.insert(PackagesContract.PackageEntry.TABLE_NAME, null, values);
 
         // Insert the new row, returning the primary key value of the new row

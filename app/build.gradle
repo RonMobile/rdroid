@@ -88,6 +88,9 @@ dependencies {
     implementation("com.github.markusressel:KodeEditor:${codeEditorVersion}")
     testImplementation 'junit:junit:4.13.1'
     testImplementation 'org.robolectric:robolectric:4.4'
+    debugImplementation 'com.amitshekhar.android:debug-db:1.0.0'
+    implementation 'com.facebook.stetho:stetho:1.5.1'
+    implementation 'com.facebook.stetho:stetho-okhttp3:1.5.1'
 }
 
 task versionName {
@@ -118,7 +121,10 @@ def downloadBootstrap(String arch, String expectedChecksum, String version) {
         }
     }
 
-    def remoteUrl = "https://github.com/termux/termux-packages/releases/download/bootstrap-" + version + "/bootstrap-" + arch + ".zip"
+    def remoteUrl =
+        "https://github.com/termux/termux-packages/releases/download/bootstrap-" +
+            version + "/bootstrap-" + arch + ".zip"
+    
     logger.quiet("Downloading " + remoteUrl + " ...")
 
     file.parentFile.mkdirs()

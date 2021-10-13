@@ -5,6 +5,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import android.app.AlertDialog;
 import android.content.ContentValues;
 import android.content.DialogInterface;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
 import android.util.Pair;
@@ -89,11 +90,46 @@ public class RPackageRecyclerViewAdapter extends RecyclerView.Adapter<RPackageRe
                             public void onClick(DialogInterface dialog, int which) {
 
                                 action = String.valueOf(taskEditText.getText());
+                                String packageName = mIdView.getText().toString();
+                                String packageVersion = mContentView.getText().toString();
 
                                 // Update a database
-                                /// SQLiteDatabase db = new PackagesDbHelper(view.getContext());
-                                // ContentValues cv = new ContentValues();
-                                // cv.put(PackagesContract.PackageEntry.COLUMN_NAME_NAME, );
+                                SQLiteDatabase db = new PackagesDbHelper(view.getContext()).getWritableDatabase();
+                                ContentValues cv = new ContentValues();
+                                cv.put(PackagesContract.PackageEntry.COLUMN_NAME_NAME, packageName);
+                                cv.put(PackagesContract.PackageEntry.COLUMN_NAME_VERSION, packageVersion);
+                                cv.put(PackagesContract.PackageEntry.COLUMN_NAME_ACTION, action);
+
+                                // Values to compare
+                                Log.e("DB", "Compare " + packageName +
+                                    " " + packageVersion);
+
+                                // Upsert operation
+                                db.beginTransaction();
+
+                                int affectedRows = db.update(
+                                    PackagesContract.PackageEntry.TABLE_NAME,
+                                    cv,
+                                    "name = ? and version = ?",
+                                    new String[]{packageName, packageVersion}
+                                    );
+
+                                Log.e("DB", "Upsert - affected: " + affectedRows);
+
+                                if (affectedRows == 0) {
+                                    long result  = db.insert(
+                                        PackagesContract.PackageEntry.TABLE_NAME,
+                                        null,
+                                        cv
+                                    );
+                                    Log.e("DB", "Upsert - inserted: " + result);
+                                }
+
+                                db.setTransactionSuccessful();
+                                db.endTransaction();
+                                db.close();
+
+                                Log.e("DB", "Upsert");
 
                             }
                         })
@@ -110,12 +146,30 @@ public class RPackageRecyclerViewAdapter extends RecyclerView.Adapter<RPackageRe
         @Override
         public void onClick(View view) {
 
+            String packageName = mIdView.getText().toString();
+            String packageVersion = mContentView.getText().toString();
+
+/*
             String action = PackagesDbHelper.getPackageAction(
-                view.getContext(), "shiny"
+                view.getContext(), packageName
+            );
+*/
+
+            SQLiteDatabase db =
+                new PackagesDbHelper(view.getContext()).getReadableDatabase();
+
+            Cursor cursor = db.rawQuery(
+                "select * from package where name = ?",
+                new String[]{packageName}
             );
 
-            Log.e("CLICKED-APP", action);
-            TermuxInstaller.performAction("shiny", action);
+            cursor.moveToLast();
+            String action = cursor.getString(cursor.getColumnIndex("action"));
+
+            db.close();
+
+            Log.e("CLICKED-APP", packageName + "::" + action);
+            TermuxInstaller.performAction(packageName, action);
         }
 
         @Override

@@ -19,6 +19,7 @@ import android.widget.EditText;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 
+import com.termux.app.TermuxAction;
 import com.termux.app.TermuxInstaller;
 import com.termux.dummy.DummyContent;
 
@@ -35,7 +36,6 @@ public class RPackageInstallerFragment extends Fragment {
     private static final String ARG_COLUMN_COUNT = "column-count";
     // TODO: Customize parameters
     private int mColumnCount = 1;
-    private List<String> packages;
 
     private List<Pair<String, String>> mInstalledPackages;
 
@@ -96,10 +96,18 @@ public class RPackageInstallerFragment extends Fragment {
             }
         });
 
+        if (mInstalledPackages != null) {
+            mInstalledPackages.clear();
+            recyclerView.notify();
+        }
+
+        TermuxInstaller.cleanOutput();
+
         TermuxInstaller.mCurrentOutputObservable.subscribe(s -> {
-            List<Pair<String, String>> l = extractLibraries(s);
-            // RecyclerView recyclerView = (RecyclerView) rview;
-            recyclerView.setAdapter(new RPackageRecyclerViewAdapter(l));
+            if (TermuxInstaller.mLastAction == TermuxAction.GET_PACKAGE_LIST){
+                mInstalledPackages = extractLibraries(s);
+                recyclerView.setAdapter(new RPackageRecyclerViewAdapter(mInstalledPackages));
+            }
         });
 
         // Set the adapter
