@@ -5,41 +5,27 @@ import android.app.Fragment;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
 import android.content.ContentValues;
-import android.content.Context;
 import android.content.Intent;
 import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteOpenHelper;
 import android.os.Bundle;
 
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.google.android.material.snackbar.Snackbar;
 import com.termux.BuildConfig;
-import com.termux.CodeFragment;
+import com.termux.CodeEditorFragment;
 import com.termux.PackagesContract;
 import com.termux.PackagesDbHelper;
 import com.termux.R;
 import com.termux.RPackageInstallerFragment;
-import com.termux.RunScriptFragment;
 import com.termux.RunShinyAppFragment;
-import com.termux.app.TermuxActivity;
-import com.termux.app.TermuxInstaller;
 
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
 
 
 import android.util.Log;
 import android.view.View;
-import android.view.WindowManager;
 import android.widget.FrameLayout;
-import android.widget.Toast;
 import android.widget.Toolbar;
 
 import java.lang.reflect.Method;
-
-import io.github.rosemoe.editor.widget.CodeEditor;
-
-import static com.termux.app.TermuxActivity.TERMUX_FAILSAFE_SESSION_ACTION;
 
 public class MainActivity extends Activity {
 
@@ -130,7 +116,7 @@ public class MainActivity extends Activity {
         mCodeEditor.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                loadFragment(new CodeFragment());
+                loadFragment(new CodeEditorFragment());
             }
         });
 
