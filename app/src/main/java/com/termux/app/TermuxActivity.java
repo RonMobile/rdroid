@@ -2,23 +2,31 @@ package com.termux.app;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
-import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.Dialog;
+import android.app.PendingIntent;
 import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.ComponentName;
+import android.content.ContentValues;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.content.pm.ShortcutInfo;
+import android.content.pm.ShortcutManager;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Typeface;
+import android.graphics.drawable.Icon;
 import android.media.AudioAttributes;
 import android.media.SoundPool;
 import android.net.Uri;
@@ -48,6 +56,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.termux.R;
+import com.termux.db.PackagesContract;
+import com.termux.db.PackagesDbHelper;
 import com.termux.terminal.EmulatorDebug;
 import com.termux.terminal.TerminalColors;
 import com.termux.terminal.TerminalSession;
@@ -68,9 +78,11 @@ import java.util.regex.Pattern;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.viewpager.widget.PagerAdapter;
 import androidx.viewpager.widget.ViewPager;
+
 
 /**
  * A terminal emulator activity.
@@ -95,6 +107,7 @@ public final class TermuxActivity extends Activity implements ServiceConnection 
     private static final int CONTEXTMENU_HELP_ID = 8;
     private static final int CONTEXTMENU_TOGGLE_KEEP_SCREEN_ON = 9;
     private static final int CONTEXTMENU_AUTOFILL_ID = 10;
+    private static final int CONTEXTMENU_ADD_SHORTCUT = 11;
 
     private static final int MAX_SESSIONS = 8;
 
@@ -112,6 +125,9 @@ public final class TermuxActivity extends Activity implements ServiceConnection 
     ExtraKeysView mExtraKeysView;
 
     TermuxPreferences mSettings;
+
+    // Shortcuts
+    ShortcutManager shortcutManager;
 
     /**
      * The connection to the {@link TermuxService}. Requested in {@link #onCreate(Bundle)} with a call to
@@ -204,6 +220,7 @@ public final class TermuxActivity extends Activity implements ServiceConnection 
         }
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.N_MR1)
     @Override
     public void onCreate(Bundle bundle) {
         mSettings = new TermuxPreferences(this);
@@ -245,6 +262,8 @@ public final class TermuxActivity extends Activity implements ServiceConnection 
         final ViewPager viewPager = findViewById(R.id.viewpager);
         if (mSettings.mShowExtraKeys) viewPager.setVisibility(View.VISIBLE);
 
+        // Init Db
+        initDb();
 
         ViewGroup.LayoutParams layoutParams = viewPager.getLayoutParams();
         layoutParams.height = layoutParams.height * (mSettings.mExtraKeys == null ? 0 : mSettings.mExtraKeys.getMatrix().length);
@@ -348,6 +367,7 @@ public final class TermuxActivity extends Activity implements ServiceConnection 
         mBellSoundId = mBellSoundPool.load(this, R.raw.bell, 1);
 
         sendOpenedBroadcast();
+
     }
 
     public int getNavBarHeight() {
@@ -366,7 +386,7 @@ public final class TermuxActivity extends Activity implements ServiceConnection 
         for (ResolveInfo info : matches) {
             Intent explicitBroadcast = new Intent(broadcast);
             ComponentName cname = new ComponentName(info.activityInfo.applicationInfo.packageName,
-                                                    info.activityInfo.name);
+                info.activityInfo.name);
             explicitBroadcast.setComponent(cname);
             sendBroadcast(explicitBroadcast);
         }
@@ -387,9 +407,13 @@ public final class TermuxActivity extends Activity implements ServiceConnection 
      * {@link #bindService(Intent, ServiceConnection, int)} in {@link #onCreate(Bundle)} which will cause a call to this
      * callback method.
      */
+    @RequiresApi(api = Build.VERSION_CODES.N)
     @Override
     public void onServiceConnected(ComponentName componentName, IBinder service) {
         mTermService = ((TermuxService.LocalBinder) service).service;
+
+        // TODO:
+        // mTerminalInstaller.installDefault(mTermService);
 
         mTermService.mSessionChangeCallback = new SessionChangedCallback() {
             @Override
@@ -558,6 +582,9 @@ public final class TermuxActivity extends Activity implements ServiceConnection 
                 // Android 7.1 app shortcut from res/xml/shortcuts.xml.
                 boolean failSafe = i.getBooleanExtra(TERMUX_FAILSAFE_SESSION_ACTION, false);
                 addNewSession(failSafe, null);
+            } else if (i != null && Intent.ACTION_VIEW.equals(i.getAction())) {
+                String label = i.getStringExtra("LABEL");
+                runPinnedCode(label);
             } else {
                 switchToSession(getStoredCurrentSessionOrLast());
             }
@@ -610,6 +637,9 @@ public final class TermuxActivity extends Activity implements ServiceConnection 
         // The current terminal session may have changed while being away, force
         // a refresh of the displayed terminal:
         mTerminalView.onScreenUpdated();
+
+        // Shortcut
+        // createShorcut();
     }
 
     @Override
@@ -721,6 +751,7 @@ public final class TermuxActivity extends Activity implements ServiceConnection 
         menu.add(Menu.NONE, CONTEXTMENU_STYLING_ID, Menu.NONE, R.string.style_terminal);
         menu.add(Menu.NONE, CONTEXTMENU_TOGGLE_KEEP_SCREEN_ON, Menu.NONE, R.string.toggle_keep_screen_on).setCheckable(true).setChecked(mSettings.isScreenAlwaysOn());
         menu.add(Menu.NONE, CONTEXTMENU_HELP_ID, Menu.NONE, R.string.help);
+        menu.add(Menu.NONE, CONTEXTMENU_ADD_SHORTCUT, Menu.NONE, R.string.add_shortcut);
     }
 
     /** Hook system menu to show context menu instead. */
@@ -939,6 +970,12 @@ public final class TermuxActivity extends Activity implements ServiceConnection 
                     }
                 }
             }
+
+            case CONTEXTMENU_ADD_SHORTCUT: {
+                createDialog().show();
+                return true;
+            }
+
             default:
                 return super.onContextItemSelected(item);
         }
@@ -997,5 +1034,154 @@ public final class TermuxActivity extends Activity implements ServiceConnection 
             switchToSession(service.getSessions().get(index));
         }
     }
+
+    //@TargetApi(25)
+    private void createShorcut(String label) {
+
+        shortcutManager =
+            this.getSystemService(ShortcutManager.class);
+
+        // Log.e("Shortcut", "" + shortcutManager.isRequestPinShortcutSupported());
+
+        Intent intent1 = new Intent(getApplicationContext(), TermuxActivity.class);
+        intent1.setAction(Intent.ACTION_VIEW);
+        intent1.putExtra("LABEL", label);
+
+        ShortcutInfo shortcut1 = new ShortcutInfo.Builder(this, label)
+            .setIntent(intent1)
+            .setLongLabel("Run " + label)
+            .setShortLabel(label)
+            //.setDisabledMessage("Login to open this")
+            .setIcon(Icon.createWithResource(this, R.drawable.ic_new_session))
+            .build();
+
+        Intent pinnedShortcutCallbackIntent =
+            shortcutManager.createShortcutResultIntent(shortcut1);
+
+        // Configure the intent so that your app's broadcast receiver gets
+        // the callback successfully.For details, see PendingIntent.getBroadcast().
+        PendingIntent successCallback = PendingIntent.getBroadcast(getApplicationContext()
+            , /* request code */ 0,
+            pinnedShortcutCallbackIntent, /* flags */ 0);
+
+        shortcutManager.requestPinShortcut(shortcut1,
+            successCallback.getIntentSender());
+
+        shortcutManager.requestPinShortcut(shortcut1, successCallback.getIntentSender());
+    }
+
+    //
+
+    public Dialog createDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        // Get the layout inflater
+        LayoutInflater inflater = this.getLayoutInflater();
+
+        View dialogView = inflater.inflate(R.layout.shortcut_action_dialog, null);
+        final EditText inputLabel = dialogView.findViewById(R.id.label);
+        final EditText inputAction = dialogView.findViewById(R.id.action);
+
+        // Inflate and set the layout for the dialog
+        // Pass null as the parent view because its going in the dialog layout
+        builder.setView(dialogView)
+
+        // Add action buttons
+        .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int id) {
+                    String label = inputLabel.getText().toString();
+                    String action = inputAction.getText().toString();
+
+                    // Add an action to database
+                    addAction(label, action);
+
+                    // Create a shortcut
+                    createShorcut(label);
+                }
+            })
+            .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int id) {
+                    //LoginDialogFragment.this.getDialog().cancel();
+                }
+            });
+        return builder.create();
+    }
+
+    // Db utils => TODO: move to separate class
+
+    private void initDb(){
+        PackagesDbHelper packagesDbHelper = new PackagesDbHelper(this);
+
+        SQLiteDatabase db = packagesDbHelper.getWritableDatabase();
+        ContentValues values = new ContentValues();
+
+        values.put(PackagesContract.PackageEntry.COLUMN_NAME_NAME, "shiny");
+        values.put(PackagesContract.PackageEntry.COLUMN_NAME_VERSION, "1.6.0");
+        values.put(PackagesContract.PackageEntry.COLUMN_NAME_ACTION, "shiny::runExample('01_hello', launch.browser = TRUE)");
+        db.insert(PackagesContract.PackageEntry.TABLE_NAME, null, values);
+
+        // Insert the new row, returning the primary key value of the new row
+        long newRowId = db.insert(PackagesContract.PackageEntry.TABLE_NAME, null, values);
+    }
+
+    private void addAction(String label, String action){
+
+        // Update a database
+        SQLiteDatabase db = new PackagesDbHelper(this).getWritableDatabase();
+        ContentValues cv = new ContentValues();
+        cv.put(PackagesContract.PackageEntry.COLUMN_NAME_NAME, label);
+        cv.put(PackagesContract.PackageEntry.COLUMN_NAME_VERSION, "-");
+        cv.put(PackagesContract.PackageEntry.COLUMN_NAME_ACTION, action);
+
+        // Values to compare
+        Log.e("DB", "Compare " + label +
+            " " + action);
+
+        // Upsert operation
+        db.beginTransaction();
+
+        int affectedRows = db.update(
+            PackagesContract.PackageEntry.TABLE_NAME,
+            cv,
+            "name = ?",
+            new String[]{label}
+        );
+
+        Log.e("DB", "Upsert - affected: " + affectedRows);
+
+        if (affectedRows == 0) {
+            long result  = db.insert(
+                PackagesContract.PackageEntry.TABLE_NAME,
+                null,
+                cv
+            );
+            Log.e("DB", "Upsert - inserted: " + result);
+        }
+
+        db.setTransactionSuccessful();
+        db.endTransaction();
+        db.close();
+
+        Log.e("DB", "Upsert");
+    }
+
+    private void runPinnedCode(String label){
+        SQLiteDatabase db =
+            new PackagesDbHelper(this).getReadableDatabase();
+
+        Cursor cursor = db.rawQuery(
+            "select * from package where name = ?",
+            new String[]{label}
+        );
+
+        cursor.moveToLast();
+        String action = cursor.getString(cursor.getColumnIndex("action"));
+
+        db.close();
+
+        Log.e("CLICKED-APP", label + ": " + action);
+        TermuxInstaller.runCode(action);
+    }
+
 
 }

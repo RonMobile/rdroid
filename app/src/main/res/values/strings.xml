@@ -24,6 +24,8 @@
     <string name="max_terminals_reached_title">Max terminals reached</string>
     <string name="max_terminals_reached_message">Close down existing ones before creating new.</string>
 
+    <string name="add_shortcut">Add shortcut</string>
+
     <string name="reset_toast_notification">Terminal reset.</string>
 
     <string name="select_url">Select URL</string>
