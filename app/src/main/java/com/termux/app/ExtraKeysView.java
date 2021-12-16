@@ -76,6 +76,7 @@ public final class ExtraKeysView extends GridLayout {
         put("F10", KeyEvent.KEYCODE_F10);
         put("F11", KeyEvent.KEYCODE_F11);
         put("F12", KeyEvent.KEYCODE_F12);
+
     }};
 
     private void sendKey(View view, String keyName, boolean forceCtrlDown, boolean forceLeftAltDown) {
