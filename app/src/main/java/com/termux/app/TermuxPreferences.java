@@ -222,6 +222,8 @@ final class TermuxPreferences {
         }
 
         // Additional keys
+        // R-style assignement
+        // Rmux change
         String defaultExtraKeys = "[[<-, %>%, ESC, TAB, CTRL, ALT, {key: '-', popup: '|'}, DOWN, UP]]";
 
         try {
