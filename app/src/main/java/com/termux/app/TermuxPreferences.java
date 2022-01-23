@@ -222,7 +222,9 @@ final class TermuxPreferences {
         }
 
         // Additional keys
-        String defaultExtraKeys = "[[<-, %>%, ESC, TAB, CTRL, ALT, {key: '-', popup: '|'}, DOWN, UP]]";
+        // R-style assignement
+        // Rmux change
+        String defaultExtraKeys = "[[<- , %>% , ESC, TAB, CTRL, ALT, {key: '-', popup: '|'}, DOWN, UP]]";
 
         try {
             String extrakeyProp = props.getProperty("extra-keys", defaultExtraKeys);

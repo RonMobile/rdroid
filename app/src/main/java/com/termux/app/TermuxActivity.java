@@ -414,7 +414,7 @@ public final class TermuxActivity extends Activity implements ServiceConnection 
 
         // TODO:
         // mTerminalInstaller.installDefault(mTermService);
-        RConsole.start(mTermService);
+        // RConsole.start(mTermService);
 
 
         mTermService.mSessionChangeCallback = new SessionChangedCallback() {
